@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,15 @@ public class ChatService {
                 .messages(UserMessage.builder().text(userMessage).build())
                 .tools(faqService) // FaqService의 @Tool 메서드를 AI가 호출할 수 있게 등록
                 .call()
+                .content();
+    }
+
+    public Flux<String> streamChatResponse(String userMessage) {
+        return chatClient.prompt()
+                .system(SYSTEM_PROMPT)
+                .messages(UserMessage.builder().text(userMessage).build())
+                .tools(faqService)
+                .stream()
                 .content();
     }
 }
