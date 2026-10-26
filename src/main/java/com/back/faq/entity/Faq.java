@@ -1,25 +1,23 @@
 package com.back.faq.entity;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
+@Table("faq")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Faq {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id // id가 null이면 INSERT, 값이 있으면 UPDATE. 값은 DB(identity)가 만든다.
     private Long id;
 
-    @Column(columnDefinition = "TEXT")
     private String question;
 
-    @Column(columnDefinition = "TEXT")
     private String answer;
 }

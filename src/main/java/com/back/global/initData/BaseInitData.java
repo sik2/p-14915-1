@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -14,25 +14,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BaseInitData implements ApplicationRunner {
     private final FaqRepository faqRepository;
-    private final JdbcTemplate jdbcTemplate;
 
+    // 확장·테이블·인덱스는 schema/faq-schema.sql(spring.sql.init)이 만든다. 여기서는 데이터만 넣는다.
     @Override
     public void run(ApplicationArguments args) {
-        initPgroonga();
-        initData();
-        initIndex();
+        initData()
+                .block(); // 애플리케이션 시작(main 스레드) 단계라 기다려도 된다. 데이터가 준비된 뒤 서버가 요청을 받는다.
     }
 
-    private void initPgroonga() {
-        jdbcTemplate.execute("CREATE EXTENSION IF NOT EXISTS pgroonga");
-        System.out.println("PGroonga 확장 설치 완료");
-    }
-
-    private void initData() {
-        if (faqRepository.count() > 0) {
-            return;
-        }
-
+    private Mono<Void> initData() {
         List<Faq> faqs = List.of(
                 Faq.builder().question("회원가입은 어떻게 하나요?").answer("홈페이지 상단의 회원가입 버튼을 클릭하여 이메일, 비밀번호, 이름을 입력하시면 됩니다.").build(),
                 Faq.builder().question("비밀번호를 잊어버렸어요").answer("로그인 페이지에서 '비밀번호 찾기'를 클릭하시고 가입 시 사용한 이메일을 입력하시면 비밀번호 재설정 링크가 발송됩니다.").build(),
@@ -48,13 +38,15 @@ public class BaseInitData implements ApplicationRunner {
                 Faq.builder().question("쿠폰은 어디서 받나요?").answer("이벤트 페이지 또는 마이페이지 > 쿠폰함에서 발급받으실 수 있습니다.").build()
         );
 
-        faqRepository.saveAll(faqs);
-        System.out.println("FAQ 초기 데이터 " + faqs.size() + "건 생성");
-    }
-
-    // faq 테이블은 JPA(ddl-auto)가 만든 뒤에 존재하므로, 인덱스는 테이블 생성 이후에 만든다.
-    private void initIndex() {
-        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS pgroonga_faq_index ON faq USING pgroonga (question, answer)");
-        System.out.println("PGroonga 인덱스 생성 완료");
+        return faqRepository.count()
+                .flatMap(count -> {
+                    if (count > 0) {
+                        System.out.println("FAQ 데이터가 이미 존재합니다: " + count + "건");
+                        return Mono.empty();
+                    }
+                    return faqRepository.saveAll(faqs) // Flux<Faq> : 저장된 FAQ가 순서대로 흘러나온다
+                            .then()                    // 결과는 버리고 "끝났다"는 신호만 남긴다
+                            .doOnSuccess(v -> System.out.println("FAQ 초기 데이터 " + faqs.size() + "건 생성"));
+                });
     }
 }

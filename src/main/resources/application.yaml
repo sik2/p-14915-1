@@ -3,17 +3,14 @@ spring:
     name: p-14915-1
   config:
     import: optional:file:.env[.properties]
-  datasource:
-    url: jdbc:postgresql://localhost:5432/${DATABASE_NAME:faqdb}
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/${DATABASE_NAME:faqdb}
     username: ${DATABASE_USERNAME:faq}
     password: ${DATABASE_PASSWORD:faq123}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
+  sql:
+    init:
+      mode: always # 내장 DB가 아니어도 항상 스키마 파일 실행
+      schema-locations: classpath:schema/faq-schema.sql
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
