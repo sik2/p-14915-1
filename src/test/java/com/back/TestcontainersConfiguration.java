@@ -1,5 +1,6 @@
 package com.back;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
@@ -8,10 +9,21 @@ import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
 class TestcontainersConfiguration {
+    @Value("${DATABASE_USERNAME:faq}")
+    private String username;
+    @Value("${DATABASE_PASSWORD:faq123}")
+    private String password;
+    @Value("${DATABASE_NAME:faqdb}")
+    private String databaseName;
 
     @Bean
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer(DockerImageName.parse("postgres:latest"));
+        return new PostgreSQLContainer(DockerImageName
+                .parse("groonga/pgroonga:latest-alpine-18-slim")
+                .asCompatibleSubstituteFor("postgres")) // postgres 이미지와 호환된다고 Testcontainers에 알려준다
+                .withDatabaseName(databaseName)
+                .withUsername(username)
+                .withPassword(password);
     }
 }

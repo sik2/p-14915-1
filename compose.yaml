@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: groonga/pgroonga:latest-alpine-18-slim # PostgreSQL 18 + PGroonga 확장 포함
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-faqdb}
+      POSTGRES_USER: ${DATABASE_USERNAME:-faq}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-faq123}
+    volumes:
+      - pg-data:/var/lib/postgresql # PostgreSQL 18 이미지는 이 경로 아래에 버전별 디렉터리를 만든다
+    restart: unless-stopped
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama # Ollama가 모델을 저장하는 경로
+    restart: unless-stopped
+volumes:
+  pg-data:
+  ollama-data:
