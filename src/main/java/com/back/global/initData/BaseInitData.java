@@ -20,6 +20,7 @@ public class BaseInitData implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         initPgroonga();
         initData();
+        initIndex();
     }
 
     private void initPgroonga() {
@@ -49,5 +50,11 @@ public class BaseInitData implements ApplicationRunner {
 
         faqRepository.saveAll(faqs);
         System.out.println("FAQ 초기 데이터 " + faqs.size() + "건 생성");
+    }
+
+    // faq 테이블은 JPA(ddl-auto)가 만든 뒤에 존재하므로, 인덱스는 테이블 생성 이후에 만든다.
+    private void initIndex() {
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS pgroonga_faq_index ON faq USING pgroonga (question, answer)");
+        System.out.println("PGroonga 인덱스 생성 완료");
     }
 }
