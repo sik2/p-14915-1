@@ -7,6 +7,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -22,13 +23,14 @@ public class FaqService {
     }
 
     // AI가 호출할 수 있는 도구. 반환값은 JSON으로 바뀌어 AI에게 전달된다.
-    // 리포지터리는 Flux를 돌려주지만, 도구는 실제 데이터(List)를 반환해야 한다. (10강에서 자세히 다룬다)
+    // - Flux를 그대로 반환하면 Spring AI가 데이터를 꺼내지 않고 Flux 객체 자체를 JSON으로 바꾼다. AI는 데이터를 받지 못한다.
+    // - 그래서 결과를 List로 모아 반환한다. block()은 블로킹해도 되는 스레드(boundedElastic 등)에서만 부를 수 있다.
     @Tool(description = "FAQ 데이터베이스에서 키워드로 질문과 답변을 검색합니다. 회원가입, 배송, 환불, 교환, 포인트, 쿠폰 등의 질문에 사용하세요.")
     public List<Faq> searchFaq(
             @ToolParam(description = "검색할 키워드 (예: 배송, 환불, 회원가입)") String keyword
     ) {
         return search(keyword)
                 .collectList()
-                .block();
+                .block(Duration.ofSeconds(10)); // DB가 응답하지 않을 때 무한정 기다리지 않게 한다
     }
 }

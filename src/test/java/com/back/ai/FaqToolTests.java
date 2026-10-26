@@ -47,7 +47,7 @@ class FaqToolTests {
     @Test
     @DisplayName("FAQ 기반 AI 챗봇 - 한 번에 답변 받기")
     void t2() {
-        String response = chatService.chat("배송은 얼마나 걸려요?");
+        String response = chatService.chat("배송은 얼마나 걸려요?").block();
 
         assertNotNull(response);
         assertFalse(response.isEmpty());
